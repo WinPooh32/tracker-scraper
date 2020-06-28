@@ -55,11 +55,11 @@ func toStatus(class string) status {
 
 type Rutracker struct{}
 
-func (r *Rutracker) ScrapeCatalog(u, proxy *url.URL) ([]url.URL, error) {
+func (r *Rutracker) ScrapeCatalog(u, proxy *url.URL) ([]scraper.Page, error) {
 	var err error
 
 	var body []byte
-	var list []url.URL
+	var list []scraper.Page
 	var doc *goquery.Document
 
 	body, err = http.Get(u, proxy)
@@ -87,6 +87,10 @@ func (r *Rutracker) ScrapeCatalog(u, proxy *url.URL) ([]url.URL, error) {
 			}
 		}
 
+		if st == statusConsumed || st == statusNotApproved{
+			return
+		}
+
 		var a = s.Find("a")
 		if a.Length() == 0 {
 			return
@@ -98,13 +102,18 @@ func (r *Rutracker) ScrapeCatalog(u, proxy *url.URL) ([]url.URL, error) {
 			return
 		}
 
+		var title = a.Text()
+
 		var u *url.URL
 		u, err = url.Parse(host + "/forum/" + link)
 		if err != nil {
 			return
 		}
 
-		list = append(list, *u)
+		list = append(list, scraper.Page{
+			Title: title,
+			URL:   *u,
+		})
 	})
 
 	return list, nil
